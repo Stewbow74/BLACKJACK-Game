@@ -63,7 +63,24 @@ class Chips:
         self.total -= self.bet
 
 # Functions
+def ask_to_bet():
+    """
+    Ask the player if they would like to place a bet before proceeding.
+    """
+    while True:
+        response = input("Would you like to place a bet? (yes/no): ").strip().lower()
+        if response == 'yes':
+            return True  # Proceed to place a bet
+        elif response == 'no':
+            print("You must place a bet to play. Please reconsider.")
+        else:
+            print("Invalid input. Please type 'yes' to place a bet or 'no' to exit.")
+
+
 def take_bet(chips):
+    """
+    Prompt the player to place a bet after confirming their willingness.
+    """
     while True:
         try:
             print(f"\nYou currently have {chips.total} chips.")
@@ -150,7 +167,10 @@ while True:
     dealer_hand.add_card(deck.deal())
     
     player_chips = Chips()
-    take_bet(player_chips)
+    
+    # Ask if the player wants to place a bet
+    if ask_to_bet():
+        take_bet(player_chips)
     
     show_some(player_hand, dealer_hand)
     
