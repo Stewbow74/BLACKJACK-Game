@@ -96,7 +96,17 @@ class Chips:
 
 # FUNCTION FOR TAKING BETS
 def take_bet(chips):
-
+    # Ask the user if they want to place a bet
+    while True:
+        response = input("Would you like to place a bet? (yes/no): ").strip().lower()
+        if response == 'yes':
+            break
+        elif response == 'no':
+            print("You must place a bet in order to play.")
+        else:
+            print("Invalid input. Please enter 'yes' or 'no'.")
+    
+    # Prompt for the bet amount
     while True:
         try:
             chips.bet = int(input('How many chips would you like to bet? '))
@@ -104,10 +114,11 @@ def take_bet(chips):
             print('Sorry, a bet must be an integer!')
         else:
             if chips.bet > chips.total:
-                print("Sorry, your bet can't exceed",chips.total)
+                print("Sorry, your bet can't exceed", chips.total)
+            elif chips.bet <= 0:
+                print("Your bet must be greater than zero!")
             else:
                 break
-
 # function for taking hits
 
 def hit(deck,hand):
