@@ -1,9 +1,3 @@
-
-
-# WELCOME TO BLACKJACK GAME CODE, IF YOU HAVE NO IDEA WHAT IS A BLACKJACK GAME, PLEASE CHECK IT OUT IN GOOGLE
-
-
-# let's import Random library
 import random
 
 # Card Suits, Ranks, and Values
@@ -21,7 +15,6 @@ class Card:
     def __str__(self):
         return f"{self.rank} of {self.suit}"
 
-
 class Deck:
     def __init__(self):
         self.deck = [Card(suit, rank) for suit in suits for rank in ranks]
@@ -31,7 +24,6 @@ class Deck:
 
     def deal(self):
         return self.deck.pop()
-
 
 class Hand:
     def __init__(self):
@@ -49,7 +41,6 @@ class Hand:
         while self.value > 21 and self.aces:
             self.value -= 10
             self.aces -= 1
-
 
 class Chips:
     def __init__(self):
@@ -76,7 +67,6 @@ def ask_to_bet():
         else:
             print("Invalid input. Please type 'yes' to place a bet or 'no' to exit.")
 
-
 def take_bet(chips):
     """
     Prompt the player to place a bet after confirming their willingness.
@@ -95,24 +85,50 @@ def take_bet(chips):
         except ValueError:
             print("Invalid input! Please enter a valid number.")
 
-
 def hit(deck, hand):
     hand.add_card(deck.deal())
     hand.adjust_for_ace()
 
+def split_hand(deck, player_hand):
+    # Split the hand if the first two cards are the same
+    card1 = player_hand.cards.pop()  # Remove one card from hand
+    card2 = player_hand.cards.pop()  # Remove the second card from hand
+    hand1 = Hand()  # Create a new hand for the split
+    hand2 = Hand()  # Create a second hand for the split
+    hand1.add_card(card1)  # Add the first card to the first hand
+    hand1.add_card(deck.deal())  # Deal a new card to the first hand
+    hand2.add_card(card2)  # Add the second card to the second hand
+    hand2.add_card(deck.deal())  # Deal a new card to the second hand
+    return hand1, hand2  # Return the two new hands
 
-def hit_or_stand(deck, hand):
+def double_down(deck, player_hand, chips):
+    # Double down, the player doubles their bet and gets only one card
+    chips.bet *= 2  # Double the bet
+    hit(deck, player_hand)  # Player gets one more card
+    print(f"Your bet is now {chips.bet} chips.")
+    return player_hand  # Return the updated hand
+
+def hit_or_stand(deck, hand, chips):
     while True:
-        choice = input("Would you like to Hit or Stand? (hit/stand): ").strip().lower()
+        print("\nYour current hand:", *hand.cards, sep='\n ')
+        print(f"Hand value: {hand.value}")
+        choice = input("Would you like to Hit, Stand, Split or Double Down? (hit/stand/split/double down): ").strip().lower()
         if choice == 'hit':
             hit(deck, hand)
             return True  # Continue playing
         elif choice == 'stand':
-            print("Player stands. Dealer's turn.")
+            print("You have chosen to stand.")
             return False  # Stop playing
+        elif choice == 'split' and len(hand.cards) == 2 and values[hand.cards[0].rank] == values[hand.cards[1].rank]:
+            # Check if the player has two cards of the same rank to split
+            print("You chose to split.")
+            hand1, hand2 = split_hand(deck, hand)  # Call the split function
+            return [hand1, hand2]  # Return the two new hands after split
+        elif choice == 'double down' and len(hand.cards) == 2:
+            print("You chose to double down.")
+            return double_down(deck, hand, chips)  # Call the double down function
         else:
-            print("Invalid input. Please type 'hit' or 'stand'.")
-
+            print("Invalid input. Please choose 'hit', 'stand', 'split' or 'double down'.")
 
 def show_some(player, dealer):
     print("\nDealer's Hand:")
@@ -120,33 +136,27 @@ def show_some(player, dealer):
     print('', dealer.cards[1])
     print("\nPlayer's Hand:", *player.cards, sep='\n ')
 
-
 def show_all(player, dealer):
     print("\nDealer's Hand:", *dealer.cards, sep='\n ')
     print("Dealer's Hand =", dealer.value)
     print("\nPlayer's Hand:", *player.cards, sep='\n ')
     print("Player's Hand =", player.value)
 
-
 def player_busts(chips):
     print("Player busts!")
     chips.lose_bet()
-
 
 def player_wins(chips):
     print("Player wins!")
     chips.win_bet()
 
-
 def dealer_busts(chips):
     print("Dealer busts!")
     chips.win_bet()
 
-
 def dealer_wins(chips):
     print("Dealer wins!")
     chips.lose_bet()
-
 
 def push():
     print("It's a tie! Push.")
@@ -154,39 +164,44 @@ def push():
 # Main Game Loop
 while True:
     print("Welcome to Blackjack! Try to get as close to 21 as possible without going over.\n")
-    
+
     deck = Deck()
     deck.shuffle()
-    
+
     player_hand = Hand()
     dealer_hand = Hand()
-    
+
     player_hand.add_card(deck.deal())
     player_hand.add_card(deck.deal())
     dealer_hand.add_card(deck.deal())
     dealer_hand.add_card(deck.deal())
-    
+
     player_chips = Chips()
-    
+
     # Ask if the player wants to place a bet
     if ask_to_bet():
         take_bet(player_chips)
-    
+
     show_some(player_hand, dealer_hand)
-    
+
     playing = True
     while playing:
-        playing = hit_or_stand(deck, player_hand)
-        show_some(player_hand, dealer_hand)
-        if player_hand.value > 21:
-            player_busts(player_chips)
-            break
-    
+        if isinstance(player_hand, list):  # Case for split hands
+            for hand in player_hand:
+                playing = hit_or_stand(deck, hand, player_chips)
+                if hand.value > 21:
+                    player_busts(player_chips)
+        else:
+            playing = hit_or_stand(deck, player_hand, player_chips)
+            if player_hand.value > 21:
+                player_busts(player_chips)
+                break
+
     if player_hand.value <= 21:
         while dealer_hand.value < 17:
             hit(deck, dealer_hand)
         show_all(player_hand, dealer_hand)
-        
+
         if dealer_hand.value > 21:
             dealer_busts(player_chips)
         elif dealer_hand.value > player_hand.value:
@@ -195,9 +210,16 @@ while True:
             player_wins(player_chips)
         else:
             push()
-    
+
     print(f"\nPlayer's total chips: {player_chips.total}")
     new_game = input("Would you like to play again? (y/n): ").strip().lower()
     if new_game != 'y':
         print("Thanks for playing! Goodbye!")
         break
+
+
+
+
+
+
+
